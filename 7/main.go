@@ -2,11 +2,8 @@ package main
 
 import (
 	"adventofcode/lib"
-	"bufio"
 	"fmt"
-	"log"
 	"os"
-	"strconv"
 )
 
 func main() {
@@ -14,7 +11,7 @@ func main() {
 }
 
 func run() {
-	program := readFile()
+	program := lib.ReadIntcode("input")
 
 	thrust := findMaxThrust(program, true)
 	fmt.Println(thrust)
@@ -177,27 +174,6 @@ func (a *amplifier) execute(input int) int {
 
 	fmt.Println("Default exit")
 	return -1
-}
-
-func readFile() []int {
-	file, err := os.Open("input")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	scanner.Split(lib.ScanCommaSeparated)
-
-	var opcodes []int
-
-	for scanner.Scan() {
-		i, err := strconv.Atoi(scanner.Text())
-		if err == nil {
-			opcodes = append(opcodes, i)
-		}
-	}
-	return opcodes
 }
 
 func val(arr []int, pos, param int) int {
