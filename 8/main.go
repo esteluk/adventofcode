@@ -34,37 +34,42 @@ func createImage(width, height int, input string) {
 		}
 		layers = append(layers, layer)
 	}
-	fmt.Println(len(layers[0]))
 
-	var fewestZeroCount int = 99999
-	var bestLayerIndex int = -1
-	for i, layer := range layers {
-		var count = 0
-		for _, j := range layer {
-			if j == 0 {
-				count++
-			}
-		}
-		if count < fewestZeroCount {
-			fewestZeroCount = count
-			bestLayerIndex = i
+	computedImage := make([][]int, height)
+	for i := range computedImage {
+		computedImage[i] = make([]int, width)
+	}
+
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			computedImage[y][x] = pixel(layers, width, x, y)
 		}
 	}
 
-	fmt.Println("Best layer at", bestLayerIndex, "with zeros:", fewestZeroCount)
-
-	bestLayer := layers[bestLayerIndex]
-	var oneCount, twoCount int = 0, 0
-	for _, v := range bestLayer {
-		if v == 1 {
-			oneCount++
-		} else if v == 2 {
-			twoCount++
-		}
+	for _, l := range computedImage {
+		fmt.Println(l)
 	}
 
-	fmt.Println(oneCount, twoCount)
-	fmt.Println("Number of one digits * number of two digits:", oneCount*twoCount)
+	/*
+		[1 1 1 0 0 1 0 0 1 0 1 0 0 1 0 1 1 1 0 0 1 0 0 0 1]
+		[1 0 0 1 0 1 0 1 0 0 1 0 0 1 0 1 0 0 1 0 1 0 0 0 1]
+		[1 0 0 1 0 1 1 0 0 0 1 1 1 1 0 1 0 0 1 0 0 1 0 1 0]
+		[1 1 1 0 0 1 0 1 0 0 1 0 0 1 0 1 1 1 0 0 0 0 1 0 0]
+		[1 0 1 0 0 1 0 1 0 0 1 0 0 1 0 1 0 1 0 0 0 0 1 0 0]
+		[1 0 0 1 0 1 0 0 1 0 1 0 0 1 0 1 0 0 1 0 0 0 1 0 0]
+	*/
+
+}
+
+func pixel(layers [][]int, width, x, y int) int {
+	for _, layer := range layers {
+		val := layer[width*y+x]
+		if val == 2 {
+			continue
+		}
+		return val
+	}
+	return -1
 }
 
 func readFile() string {
