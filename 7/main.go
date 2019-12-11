@@ -16,15 +16,15 @@ func main() {
 func run() {
 	program := readFile()
 
-	thrust := findMaxThrust(program)
+	thrust := findMaxThrust(program, true)
 	fmt.Println(thrust)
 }
 
-func findMaxThrust(program []int) int {
+func findMaxThrust(program []int, feedback bool) int {
 	var maxThrust = 0
 	var optimumPhaseSettings []int
-	for _, el := range findAllPermutations() {
-		thrust := calculateThrust(program, el)
+	for _, el := range findAllPermutations(feedback) {
+		thrust := calculateThrust(program, el, feedback)
 		if thrust > maxThrust {
 			maxThrust = thrust
 			optimumPhaseSettings = el
@@ -36,7 +36,7 @@ func findMaxThrust(program []int) int {
 	return maxThrust
 }
 
-func calculateThrust(program []int, phaseSettings []int) int {
+func calculateThrust(program []int, phaseSettings []int, feedback bool) int {
 	var amps = [5]amplifier{}
 
 	for i, s := range phaseSettings {
@@ -51,8 +51,22 @@ func calculateThrust(program []int, phaseSettings []int) int {
 	}
 
 	var input int = 0
-	for i := 0; i < len(amps); i++ {
-		input = amps[i].execute(input)
+	if feedback {
+		var complete bool = false
+		for !complete {
+			for i := 0; i < len(amps); i++ {
+				output := amps[i].execute(input)
+				if output > -1 {
+					input = output
+				} else {
+					complete = true
+				}
+			}
+		}
+	} else {
+		for i := 0; i < len(amps); i++ {
+			input = amps[i].execute(input)
+		}
 	}
 
 	return input
@@ -62,9 +76,13 @@ var permutations [][]int
 
 // Heap's algorithm
 
-func findAllPermutations() [][]int {
+func findAllPermutations(feedback bool) [][]int {
 	permutations = nil
 	settings := []int{0, 1, 2, 3, 4}
+
+	if feedback {
+		settings = []int{5, 6, 7, 8, 9}
+	}
 	generate(len(settings), settings)
 	return permutations
 }
@@ -96,8 +114,7 @@ type amplifier struct {
 	isInitialised bool
 }
 
-func (a amplifier) execute(input int) int {
-
+func (a *amplifier) execute(input int) int {
 	for a.pointer < len(a.intcode) {
 		v := a.intcode[a.pointer]
 
@@ -149,7 +166,7 @@ func (a amplifier) execute(input int) int {
 			}
 			a.pointer += 4
 		} else if mode == 99 {
-			break
+			return -1
 		} else {
 			fmt.Println("Fatal error")
 			fmt.Println(v)
@@ -159,7 +176,7 @@ func (a amplifier) execute(input int) int {
 	}
 
 	fmt.Println("Default exit")
-	return 1
+	return -1
 }
 
 func readFile() []int {
