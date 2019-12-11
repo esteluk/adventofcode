@@ -40,12 +40,19 @@ func calculateThrust(program []int, phaseSettings []int) int {
 	var amps = [5]amplifier{}
 
 	for i, s := range phaseSettings {
-		amps[i] = amplifier{phaseSetting: s}
+		var p = make([]int, cap(program))
+		copy(p, program)
+		amps[i] = amplifier{
+			phaseSetting:  s,
+			intcode:       p,
+			pointer:       0,
+			isInitialised: false,
+		}
 	}
 
 	var input int = 0
 	for i := 0; i < len(amps); i++ {
-		input = amps[i].execute(program, input)
+		input = amps[i].execute(input)
 	}
 
 	return input
@@ -83,11 +90,76 @@ func generate(k int, array []int) {
 }
 
 type amplifier struct {
-	phaseSetting int
+	phaseSetting  int
+	intcode       []int
+	pointer       int
+	isInitialised bool
 }
 
-func (a amplifier) execute(program []int, input int) int {
-	return executeOpCodeInput(program, []int{a.phaseSetting, input})
+func (a amplifier) execute(input int) int {
+
+	for a.pointer < len(a.intcode) {
+		v := a.intcode[a.pointer]
+
+		mode := v % 100
+
+		if mode == 1 {
+			a.intcode[a.intcode[a.pointer+3]] = val(a.intcode, a.pointer, 1) + val(a.intcode, a.pointer, 2)
+			a.pointer += 4
+		} else if mode == 2 {
+			a.intcode[a.intcode[a.pointer+3]] = val(a.intcode, a.pointer, 1) * val(a.intcode, a.pointer, 2)
+			a.pointer += 4
+		} else if mode == 3 {
+			if a.isInitialised {
+				a.intcode[a.intcode[a.pointer+1]] = input
+			} else {
+				a.intcode[a.intcode[a.pointer+1]] = a.phaseSetting
+				a.isInitialised = true
+			}
+
+			a.pointer += 2
+		} else if mode == 4 {
+			exit := val(a.intcode, a.pointer, 1)
+			a.pointer += 2
+			return exit
+		} else if mode == 5 {
+			if val(a.intcode, a.pointer, 1) != 0 {
+				a.pointer = val(a.intcode, a.pointer, 2)
+			} else {
+				a.pointer += 3
+			}
+		} else if mode == 6 {
+			if val(a.intcode, a.pointer, 1) == 0 {
+				a.pointer = val(a.intcode, a.pointer, 2)
+			} else {
+				a.pointer += 3
+			}
+		} else if mode == 7 {
+			if val(a.intcode, a.pointer, 1) < val(a.intcode, a.pointer, 2) {
+				a.intcode[a.intcode[a.pointer+3]] = 1
+			} else {
+				a.intcode[a.intcode[a.pointer+3]] = 0
+			}
+			a.pointer += 4
+		} else if mode == 8 {
+			if val(a.intcode, a.pointer, 1) == val(a.intcode, a.pointer, 2) {
+				a.intcode[a.intcode[a.pointer+3]] = 1
+			} else {
+				a.intcode[a.intcode[a.pointer+3]] = 0
+			}
+			a.pointer += 4
+		} else if mode == 99 {
+			break
+		} else {
+			fmt.Println("Fatal error")
+			fmt.Println(v)
+			fmt.Println(a.intcode)
+			os.Exit(1)
+		}
+	}
+
+	fmt.Println("Default exit")
+	return 1
 }
 
 func readFile() []int {
@@ -109,71 +181,6 @@ func readFile() []int {
 		}
 	}
 	return opcodes
-}
-
-func executeOpCodeInput(instructions []int, input []int) int {
-	var output = make([]int, cap(instructions))
-	copy(output, instructions)
-
-	var inputCount int = 0
-
-	lastExit := 0
-	var i = 0
-	for i < len(instructions) {
-		v := output[i]
-
-		mode := v % 100
-
-		if mode == 1 {
-			output[output[i+3]] = val(output, i, 1) + val(output, i, 2)
-			i += 4
-		} else if mode == 2 {
-			output[output[i+3]] = val(output, i, 1) * val(output, i, 2)
-			i += 4
-		} else if mode == 3 {
-			output[output[i+1]] = input[inputCount]
-			inputCount++
-			i += 2
-		} else if mode == 4 {
-			lastExit = val(output, i, 1)
-			i += 2
-		} else if mode == 5 {
-			if val(output, i, 1) != 0 {
-				i = val(output, i, 2)
-			} else {
-				i += 3
-			}
-		} else if mode == 6 {
-			if val(output, i, 1) == 0 {
-				i = val(output, i, 2)
-			} else {
-				i += 3
-			}
-		} else if mode == 7 {
-			if val(output, i, 1) < val(output, i, 2) {
-				output[output[i+3]] = 1
-			} else {
-				output[output[i+3]] = 0
-			}
-			i += 4
-		} else if mode == 8 {
-			if val(output, i, 1) == val(output, i, 2) {
-				output[output[i+3]] = 1
-			} else {
-				output[output[i+3]] = 0
-			}
-			i += 4
-		} else if mode == 99 {
-			break
-		} else {
-			fmt.Println("Fatal error")
-			fmt.Println(v)
-			fmt.Println(output)
-			os.Exit(1)
-		}
-	}
-
-	return lastExit
 }
 
 func val(arr []int, pos, param int) int {
