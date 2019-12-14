@@ -1,6 +1,7 @@
 package main
 
 import (
+	"adventofcode/lib"
 	"bufio"
 	"fmt"
 	"log"
@@ -11,17 +12,20 @@ import (
 
 func main() {
 	system := readMoons("input")
-	system.printDesc()
+	// system.printDesc()
 
-	for i := 0; i < 1000; i++ {
+	// for i := 0; i < 1000; i++ {
 
-		fmt.Println("After", i+1, "steps")
-		system = system.timeStep()
-		system.printDesc()
-		fmt.Println("")
-	}
+	// 	fmt.Println("After", i+1, "steps")
+	// 	system = system.timeStep()
+	// 	system.printDesc()
+	// 	fmt.Println("")
+	// }
 
-	fmt.Println("Total energy in system is", system.totalEnergy())
+	// fmt.Println("Total energy in system is", system.totalEnergy())
+
+	period := system.findPeriod()
+	fmt.Println(period)
 }
 
 func readMoons(filename string) system {
@@ -42,6 +46,58 @@ func readMoons(filename string) system {
 }
 
 type system []moon
+
+func (s system) findPeriod() int {
+
+	xPeriod, yPeriod, zPeriod := -1, -1, -1
+	var system = s
+	s.printDesc()
+	fmt.Println("")
+	time := 0
+	for xPeriod < 0 || yPeriod < 0 || zPeriod < 0 {
+		time++
+		system = system.timeStep()
+
+		xMatches, yMatches, zMatches := true, true, true
+		for i, el := range system {
+			if el.position.x == s[i].position.x && el.velocity.x == s[i].velocity.x {
+				xMatches = true && xMatches
+			} else {
+				xMatches = false
+			}
+
+			if el.position.y == s[i].position.y && el.velocity.y == s[i].velocity.y {
+				yMatches = true && yMatches
+			} else {
+				yMatches = false
+			}
+
+			if el.position.z == s[i].position.z && el.velocity.z == s[i].velocity.z {
+				zMatches = true && zMatches
+			} else {
+				zMatches = false
+			}
+		}
+
+		if xPeriod < 0 && xMatches {
+			xPeriod = time
+		}
+
+		if yPeriod < 0 && yMatches {
+			yPeriod = time
+		}
+
+		if zPeriod < 0 && zMatches {
+			zPeriod = time
+		}
+
+	}
+
+	fmt.Println()
+
+	fmt.Println(xPeriod, yPeriod, zPeriod)
+	return lib.LCM(xPeriod, yPeriod, zPeriod)
+}
 
 func (s system) printDesc() {
 	for _, el := range s {
