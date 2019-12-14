@@ -20,3 +20,19 @@ func LCM(a, b int, integers ...int) int {
 
 	return result
 }
+
+// Min returns the smaller of the two integers
+func Min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// Max returns the larger of the two integers
+func Max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
